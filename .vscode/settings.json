@@ -1,0 +1,7 @@
+
+{
+  "python.defaultInterpreterPath": "/Users/andres/Desktop/crypto-correlation-analysis/venv/bin/python",
+  "python.analysis.extraPaths": ["./src"],
+  "python.analysis.autoImportCompletions": true,
+  "python.analysis.indexing": true
+}
