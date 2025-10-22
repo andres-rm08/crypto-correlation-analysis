@@ -54,24 +54,29 @@ def price_verify(coin_id_str: str, days: int, interval: str = 'daily'):      #He
     response.raise_for_status()
     return response.json()['prices']
 
-def init_prices(days: int = 365):     #Makes sure prices table is populated (checks first)
+def init_prices(days: int = 365):
     conn = get_conn()
     try:
-        cursor = conn.cursor()
-        if cursor.execute('''SELECT 1 FROM prices LIMIT 1 ''').fetchone():
-            return
-        fetch_coins = cursor.execute('''SELECT id, name FROM coins''').fetchall()
+        cur = conn.cursor()
+        fetch_coins = cur.execute('SELECT id, name FROM coins').fetchall()
         if not fetch_coins:
             return
         for c_id, c_name in fetch_coins:
+            has_any = cur.execute(
+                'SELECT 1 FROM prices WHERE coin_id=? LIMIT 1', (c_id,)
+            ).fetchone()
+            if has_any:
+                continue  
             try:
                 prices = price_verify(c_name, days=days)
-            except requests.RequestException as e:
+            except requests.RequestException:
                 continue
-            cursor.executemany('''INSERT OR IGNORE INTO prices (coin_id, timestamp, price) VALUES (?,?,?)''', 
-                ((c_id, pd.to_datetime(timestamp, unit = "ms").isoformat(), price) for timestamp, price in prices))
+            cur.executemany(
+                'INSERT OR IGNORE INTO prices (coin_id, timestamp, price) VALUES (?,?,?)',
+                ((c_id, pd.to_datetime(ts, unit="ms").isoformat(), price) for ts, price in prices),
+            )
+            conn.commit()
             time.sleep(1.2)
-        conn.commit()
     except Exception:
         conn.rollback()
         raise
