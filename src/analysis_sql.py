@@ -1,10 +1,12 @@
+from util_db import path_db
+
 
 def metrics():
     import pandas as pd
     import sqlite3
     from scipy.stats import zscore
 
-    conn = sqlite3.connect("../crypto_data.db")
+    conn = sqlite3.connect(path_db)
 
     df = pd.read_sql_query(
         """SELECT c.name, c.symbol, p.timestamp, p.price 

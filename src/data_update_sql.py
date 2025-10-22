@@ -42,10 +42,3 @@ for i in coins_id:
                         )
         time.sleep(2)
 conn.commit()
-
-
-
-
-
-
-print(coins_id)

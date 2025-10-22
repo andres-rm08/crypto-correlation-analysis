@@ -3,23 +3,40 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import pandas as pd
 from analysis_sql import metrics
+from util_db import verify, init_prices, update_missing
 
+verify()
+init_prices(days=365)
 
 st.set_page_config(page_title="Crypto Analytics Dashboard", layout="wide", page_icon="📊",)
 
-@st.cache_data
+@st.cache_resource
+def bootstrap():
+    verify()
+    init_prices(days=365)
+
+bootstrap()
+
+@st.cache_data(ttl=60*60)  
 def load_metrics():
-    df, df_recent, volatility, avg_return, corr_coffs = metrics()
-    return df, df_recent, volatility, avg_return, corr_coffs
+    return metrics()
 
 df, df_recent, volatility, avg_return, corr_coffs = load_metrics()
 
 st.sidebar.title("⚙️ Dashboard Controls")
 
+if st.sidebar.button("🔄 Update data"):
+    with st.spinner("Updating from CoinGecko…"):
+        update_missing()
+        load_metrics.clear() 
+        df, df_recent, volatility, avg_return, corr_coffs = load_metrics()
+        st.success("Data updated.")
+
 view_choice = st.sidebar.radio("Select View:",["Overview", "Return vs Risk", 
     "Correlation Heatmap", "Recommendation Table"],)
 
-st.sidebar.markdown("---")
+st.sidebar.markdown(
+    f"Last updated: **{pd.to_datetime(df['timestamp']).max().strftime('%Y-%m-%d')}**")
 st.sidebar.write(f"Data points: {len(df):,}")
 st.sidebar.write(f"Coins analyzed: {df['symbol'].nunique()}")
 

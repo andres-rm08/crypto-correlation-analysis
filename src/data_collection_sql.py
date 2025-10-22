@@ -3,18 +3,17 @@ import pandas as pd
 import sqlite3
 import time
 
-conn = sqlite3.connect("../crypto_data.db")
+conn = sqlite3.connect("../data/processed/crypto_data.db")
 cursor = conn.cursor()
 
 cursor.executescript(
-    """CREATE TABLE IF NOT EXISTS coins (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    """CREATE TABLE IF NOT EXISTS coins 
+    (id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT UNIQUE,
     symbol TEXT
     );
-
-    CREATE TABLE IF NOT EXISTS prices (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    CREATE TABLE IF NOT EXISTS prices 
+    (id INTEGER PRIMARY KEY AUTOINCREMENT,
     coin_id INTEGER,
     timestamp TEXT,
     price REAL,
@@ -22,14 +21,9 @@ cursor.executescript(
     );
     """)
 
-coins = [
-    {"id": "bitcoin", "symbol": "BTC"},
-    {"id": "ethereum", "symbol": "ETH"},
-    {"id": "solana", "symbol": "SOL"},
-    {"id": "cardano", "symbol": "ADA"},
-    {"id": "binancecoin", "symbol": "BNB"},
-    {"id": "ripple", "symbol": "XRP"}
-    ]
+coins = [{"id": "bitcoin", "symbol": "BTC"}, {"id": "ethereum", "symbol": "ETH"},
+    {"id": "solana", "symbol": "SOL"}, {"id": "cardano", "symbol": "ADA"},
+    {"id": "binancecoin", "symbol": "BNB"}, {"id": "ripple", "symbol": "XRP"}]
 
 for c in coins:
     cursor.execute(
