@@ -9,9 +9,36 @@ DATA_DIR = BASE_DIR / "data" / "processed"
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 path_db = DATA_DIR / "crypto_data.db"
 
-coins = [{"id": "bitcoin",     "symbol": "BTC"}, {"id": "ethereum",    "symbol": "ETH"},
-    {"id": "solana",      "symbol": "SOL"}, {"id": "cardano",     "symbol": "ADA"},
-    {"id": "binancecoin", "symbol": "BNB"}, {"id": "ripple",      "symbol": "XRP"},]
+coins = [{"id": "bitcoin", "symbol": "BTC"},
+    {"id": "ethereum", "symbol": "ETH"},
+    {"id": "solana", "symbol": "SOL"},
+    {"id": "cardano", "symbol": "ADA"},
+    {"id": "binancecoin", "symbol": "BNB"},
+    {"id": "ripple", "symbol": "XRP"},
+    {"id": "polkadot", "symbol": "DOT"},
+    {"id": "dogecoin", "symbol": "DOGE"},
+    {"id": "avalanche-2", "symbol": "AVAX"},
+    {"id": "chainlink", "symbol": "LINK"},
+    {"id": "polygon", "symbol": "MATIC"},
+    {"id": "litecoin", "symbol": "LTC"},
+    {"id": "uniswap", "symbol": "UNI"},
+    {"id": "stellar", "symbol": "XLM"},
+    {"id": "cosmos", "symbol": "ATOM"},
+    {"id": "algorand", "symbol": "ALGO"},
+    {"id": "vechain", "symbol": "VET"},
+    {"id": "filecoin", "symbol": "FIL"},
+    {"id": "tron", "symbol": "TRX"},
+    {"id": "monero", "symbol": "XMR"},
+    {"id": "ethereum-classic", "symbol": "ETC"},
+    {"id": "bitcoin-cash", "symbol": "BCH"},
+    {"id": "hedera-hashgraph", "symbol": "HBAR"},
+    {"id": "near", "symbol": "NEAR"},
+    {"id": "fantom", "symbol": "FTM"},
+    {"id": "the-sandbox", "symbol": "SAND"},
+    {"id": "decentraland", "symbol": "MANA"},
+    {"id": "axie-infinity", "symbol": "AXS"},
+    {"id": "chiliz", "symbol": "CHZ"},
+    {"id": "enjincoin", "symbol": "ENJ"}]
 
 def get_conn():     #Helper function to optimize SQL queries
     conn = sqlite3.connect(path_db, check_same_thread=False, timeout=5.0)
