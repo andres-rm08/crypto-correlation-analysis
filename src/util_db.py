@@ -88,29 +88,63 @@ def init_prices(days: int = 365):
         fetch_coins = cur.execute('SELECT id, name FROM coins').fetchall()
         if not fetch_coins:
             return
+        
+        # Track which coins need data
+        coins_needing_data = []
         for c_id, c_name in fetch_coins:
             has_any = cur.execute(
                 'SELECT 1 FROM prices WHERE coin_id=? LIMIT 1', (c_id,)
             ).fetchone()
-            if has_any:
-                continue  
-            try:
-                prices = price_verify(c_name, days=days)
-            except requests.RequestException:
-                continue
-            cur.executemany(
-                'INSERT OR IGNORE INTO prices (coin_id, timestamp, price) VALUES (?,?,?)',
-                ((c_id, pd.to_datetime(ts, unit="ms").isoformat(), price) for ts, price in prices),
-            )
-            conn.commit()
-            time.sleep(1.2)
+            if not has_any:
+                coins_needing_data.append((c_id, c_name))
+        
+        # Retry logic for failed coins
+        max_retries = 3
+        failed_coins = []
+        
+        for attempt in range(max_retries):
+            if attempt > 0:
+                # Wait longer between retry attempts
+                time.sleep(5)
+            
+            for c_id, c_name in coins_needing_data:
+                # Check if we already got data for this coin
+                has_any = cur.execute(
+                    'SELECT 1 FROM prices WHERE coin_id=? LIMIT 1', (c_id,)
+                ).fetchone()
+                if has_any:
+                    continue
+                
+                try:
+                    prices = price_verify(c_name, days=days)
+                    cur.executemany(
+                        'INSERT OR IGNORE INTO prices (coin_id, timestamp, price) VALUES (?,?,?)',
+                        ((c_id, pd.to_datetime(ts, unit="ms").isoformat(), price) for ts, price in prices),
+                    )
+                    conn.commit()
+                    print(f"Successfully fetched data for {c_name}")
+                    time.sleep(2.0)  # Increased sleep time to respect rate limits
+                except requests.RequestException as e:
+                    print(f"Attempt {attempt + 1} failed for {c_name}: {e}")
+                    failed_coins.append((c_id, c_name))
+                    time.sleep(2.0)  # Still wait even on failure
+            
+            # Update list for next retry
+            coins_needing_data = failed_coins
+            failed_coins = []
+            
+            if not coins_needing_data:
+                break
+        
+        if coins_needing_data:
+            print(f"Warning: Could not fetch data for {len(coins_needing_data)} coins after {max_retries} attempts")
     except Exception:
         conn.rollback()
         raise
     finally:
         conn.close()
 
-def update_missing(days_back_probe: int = 4, sleep_seconds: float = 0.8) -> None:
+def update_missing(days_back_probe: int = 4, sleep_seconds: float = 1.5) -> None:
     from datetime import datetime
     conn = get_conn()
     try:
@@ -134,12 +168,16 @@ def update_missing(days_back_probe: int = 4, sleep_seconds: float = 0.8) -> None
                 (coin_id,),
             ).fetchone()[0]
 
-            miss_days = 1 if last_local is None else max(
-                (datetime.fromisoformat(last_remote_iso) - datetime.fromisoformat(last_local)).days, 1
-            )
+            # FIX: If coin has no data, fetch full 365 days instead of just 1 day
+            if last_local is None:
+                miss_days = 365  # Fetch full year for coins with no data
+            else:
+                miss_days = max(
+                    (datetime.fromisoformat(last_remote_iso) - datetime.fromisoformat(last_local)).days, 1
+                )
 
             try:
-                newer = price_verify(coin_name, days=miss_days + 1)
+                newer = price_verify(coin_name, days=min(miss_days + 1, 365))  # Cap at 365 days
             except requests.RequestException as e:
                 print(f"Warning: incremental fetch failed for {coin_name}: {e}")
                 continue
@@ -156,6 +194,7 @@ def update_missing(days_back_probe: int = 4, sleep_seconds: float = 0.8) -> None
                     to_add,
                 )
                 conn.commit()
+                print(f"Updated {len(to_add)} data points for {coin_name}")
 
             time.sleep(sleep_seconds)
     finally:

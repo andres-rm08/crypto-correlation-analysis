@@ -5,9 +5,6 @@ import pandas as pd
 from analysis_sql import metrics
 from util_db import verify, init_prices, update_missing
 
-verify()
-init_prices(days=365)
-
 st.set_page_config(page_title="Crypto Analytics Dashboard", layout="wide", page_icon="📊",)
 
 @st.cache_resource
