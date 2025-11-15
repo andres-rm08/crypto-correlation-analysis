@@ -77,12 +77,68 @@ elif view_choice == "Return vs Risk":
 
 elif view_choice == "Correlation Heatmap":
     st.header("Return Correlation Heatmap")
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        show_annotations = st.checkbox("Show correlation values", value=False, help="Toggle to show/hide individual correlation values")
+    with col2:
+        font_scale = st.slider("Label font size", min_value=0.5, max_value=1.5, value=0.8, step=0.1)
+    
 
-    fig, ax = plt.subplots(figsize=(8, 6))
-    sns.heatmap(corr_coffs, annot=True, cmap="coolwarm", center=0, ax=ax)
-    ax.set_title("Correlation Matrix of Daily Returns")
+    st.subheader("Filter Options")
+    selected_coins = st.multiselect(
+        "Select cryptocurrencies to display (leave empty for all)",
+        options=corr_coffs.columns.tolist(),
+        default=[],
+        help="Select specific coins to focus on, or leave empty to see all correlations"
+    )
+    
 
+    if selected_coins:
+        filtered_corr = corr_coffs.loc[selected_coins, selected_coins]
+    else:
+        filtered_corr = corr_coffs
+    
+    num_coins = len(filtered_corr)
+    fig_size = max(10, num_coins * 0.5)  
+    
+
+    fig, ax = plt.subplots(figsize=(fig_size, fig_size))
+    
+    annot = show_annotations and num_coins <= 15
+    
+    sns.heatmap(
+        filtered_corr, 
+        annot=annot,
+        fmt='.2f' if annot else '',
+        cmap="coolwarm", 
+        center=0, 
+        ax=ax,
+        square=True,
+        linewidths=0.5,
+        cbar_kws={"shrink": 0.8},
+        xticklabels=True,
+        yticklabels=True
+    )
+    
+    ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha='right', fontsize=8*font_scale)
+    ax.set_yticklabels(ax.get_yticklabels(), rotation=0, fontsize=8*font_scale)
+    ax.set_title(f"Correlation Matrix of Daily Returns ({num_coins} cryptocurrencies)", fontsize=12, pad=20)
+    
+    plt.tight_layout()
     st.pyplot(fig)
+
+    st.subheader("Correlation Summary")
+    col1, col2, col3 = st.columns(3)
+    with col1:
+
+        mask = np.triu(np.ones_like(filtered_corr, dtype=bool), k=1)
+        upper_triangle = filtered_corr.where(mask)
+        st.metric("Average Correlation", f"{upper_triangle.mean().mean():.3f}")
+    with col2:
+        st.metric("Max Correlation", f"{upper_triangle.max().max():.3f}")
+    with col3:
+        st.metric("Min Correlation", f"{upper_triangle.min().min():.3f}")
 
 
 elif view_choice == "Recommendation Table":
