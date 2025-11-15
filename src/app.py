@@ -2,6 +2,7 @@ import streamlit as st
 import seaborn as sns
 import matplotlib.pyplot as plt
 import pandas as pd
+import numpy as np
 from analysis_sql import metrics
 from util_db import verify, init_prices, update_missing
 
